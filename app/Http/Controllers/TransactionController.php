@@ -20,7 +20,10 @@ class TransactionController extends Controller
     public function index()
     {
         if ($this->user['admin'] == 1) {
-            $transactions = Transactions::where('status', 'pending')->get();
+            $transactions = Transactions::where('status', 'pending')
+                ->where('type', 'in')
+                ->get()
+                ->load('user');
         } else {
             $transactions = Transactions::where('user_id', $this->user['id'])->get();
         }

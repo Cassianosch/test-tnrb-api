@@ -43,6 +43,6 @@ class Transactions extends Authenticatable
 
     public function user()
     {
-        return $this->belongsTo('CS\Models\User');
+        return $this->belongsTo(User::class);
     }
 }

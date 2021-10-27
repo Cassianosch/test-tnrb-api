@@ -1,7 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ImageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,16 +17,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::group([
+Route::post('login', [AuthController::class, 'login']);
+Route::post('register', [UserController::class, 'store']);
 
-    'middleware' => 'api',
-    'namespace' => 'App\Http\Controllers',
-    'prefix' => 'auth'
+Route::group(['middleware' => ['jwt.verify']], function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('me', [AuthController::class, 'me']);
 
-], function ($router) {
+    Route::get('transactions', [TransactionController::class, 'index']);
+    Route::post('transactions', [TransactionController::class, 'store']);
+    Route::get('transactions/{id?}', [TransactionController::class, 'show']);
+    Route::patch('transactions/{id?}', [TransactionController::class, 'update']);
 
-    Route::post('login', 'AuthController@login');
-    Route::post('logout', 'AuthController@logout');
-    Route::post('refresh', 'AuthController@refresh');
-    Route::post('me', 'AuthController@me');
+    Route::post('image-upload', [ImageController::class, 'store']);
 });

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
+Route::get('/health', function () {
     // return view('welcome');
     return 'on the line!';
 });

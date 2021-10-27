@@ -110,7 +110,7 @@ class TransactionController extends Controller
             $transaction = Transactions::where('id', $id)
                 ->where('user_id', $this->user['id'])
                 ->get();
-            if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
+            if ($transaction->isEmpty() || !$this->user['id']) return response()->json(['success' => false, "message" => 'no_transaction']);
 
             $transaction_to_delete = Transactions::find($id);
             $transaction_to_delete->delete();

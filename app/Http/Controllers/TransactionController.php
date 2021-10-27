@@ -104,4 +104,17 @@ class TransactionController extends Controller
         }
         return response()->json(['success' => false, 'message' => 'error']);
     }
+    public function delete($id = false)
+    {
+        if ($id) {
+            $transaction = Transactions::where('id', $id)
+                ->where('user_id', $this->user['admin'])
+                ->get();
+            if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
+
+            $transaction_to_delete = Transactions::find($id);
+            $transaction_to_delete->delete();
+            return response()->json(['success' => true]);
+        }
+    }
 }

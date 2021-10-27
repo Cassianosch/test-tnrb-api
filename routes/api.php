@@ -28,6 +28,7 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     Route::post('transactions', [TransactionController::class, 'store']);
     Route::get('transactions/{id?}', [TransactionController::class, 'show']);
     Route::patch('transactions/{id?}', [TransactionController::class, 'update']);
+    Route::delete('transactions/{id?}', [TransactionController::class, 'delete']);
 
     Route::post('image-upload', [ImageController::class, 'store']);
 });

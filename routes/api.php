@@ -22,7 +22,7 @@ Route::post('register', [UserController::class, 'store']);
 
 Route::group(['middleware' => ['jwt.verify']], function () {
     Route::post('logout', [AuthController::class, 'logout']);
-    Route::post('me', [AuthController::class, 'me']);
+    Route::get('me', [AuthController::class, 'me']);
 
     Route::get('transactions', [TransactionController::class, 'index']);
     Route::post('transactions', [TransactionController::class, 'store']);

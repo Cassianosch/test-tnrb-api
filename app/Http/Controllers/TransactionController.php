@@ -108,7 +108,7 @@ class TransactionController extends Controller
     {
         if ($id) {
             $transaction = Transactions::where('id', $id)
-                ->where('user_id', $this->user['admin'])
+                ->where('user_id', $this->user['id'])
                 ->get();
             if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
 

@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
 {
@@ -30,9 +31,44 @@ class TransactionController extends Controller
         }
         return response()->json($transactions);
     }
+    public function balance(Request $request)
+    {
+        $transactions = Transaction::query()
+            ->where('user_id', $this->user['id']);
+
+        if(!empty($request->query('period'))) {
+            $date_exploded = explode('-', $request->query('period'));
+            $transactions = $transactions->whereMonth('date', $date_exploded[0]);
+            $transactions = $transactions->whereYear('date', $date_exploded[1]);
+        }
+
+        if(!empty($request->query('type'))) {
+            if($request->query('type') == 'positive') $transactions = $transactions->where('type', 'in');
+            if($request->query('type') == 'negative') $transactions = $transactions->where('type', 'out');
+        }
+
+        $result = $transactions->get();
+
+        $value_positive = 0;
+        $value_negative = 0;
+        $balance = 0;
+
+        foreach ($result as $key => $value) {
+            if($value['type'] == 'in' && $value['status'] == 'accepted') $value_positive += $value['amount'];
+            if($value['type'] == 'out') $value_negative -= $value['amount'];
+        }
+        return response()->json([
+            'balance' => ($value_positive + $value_negative),
+            'positive' => $value_positive,
+            'negative' => $value_negative,
+            'transactions' => $result
+        ]);
+    }
 
     public function store(Request $request)
     {
+        if ($this->user['admin'] == 1) return response()->json($validator->messages());
+
         $rules = [
             'amount' => ['required'],
             'date' => ['required'],
@@ -40,10 +76,10 @@ class TransactionController extends Controller
             'type' => ['required', 'in:in,out'],
             'image' => ['mimes:jpg,png', 'max:4096'],
         ];
+
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) return response()->json($validator->messages());
-
 
         if (!empty($request['image'])) {
             $image_saved = $this->storeImage($request);
@@ -65,7 +101,16 @@ class TransactionController extends Controller
         if ($id) {
             $transaction = Transaction::where('user_id', $this->user['id'])
                 ->where('id', $id)
+                ->limit(1)
                 ->get();
+
+
+                if(!empty($transaction[0]['image'])) $url = Storage::path($transaction[0]['image']);
+
+                dd($url);
+                // return Storage::download($transaction[0]['image']);
+                // dd($transaction[0]['image']);
+
             if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'bypass']);
             return response()->json($transaction);
         }
@@ -137,6 +182,6 @@ class TransactionController extends Controller
 
     private function storeImage($request)
     {
-        return $request->image->store('public/documents/transactions');
+        return $request->image->store('public/images/transactions');
     }
 }

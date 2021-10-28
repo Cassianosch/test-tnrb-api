@@ -180,6 +180,20 @@ class TransactionController extends Controller
         }
     }
 
+    public function image($id) {
+        if(empty($id)) return response()->json(['success' => false, "message" => 'bypass']);
+
+        $transactions = Transaction::query()
+            ->where('id', $id);
+
+        if ($this->user['admin'] == 0) $transactions->where('user_id', $this->user['id']);
+
+        $transaction = $transactions->get();
+        if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
+
+        return Storage::download($transaction[0]['image']);
+    }
+
     private function storeImage($request)
     {
         return $request->image->store('public/images/transactions');

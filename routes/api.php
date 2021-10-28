@@ -27,7 +27,8 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     Route::patch('update-me', [UserController::class, 'update']);
 
     Route::get('transactions', [TransactionController::class, 'index']);
-    Route::get('transactions-balance', [TransactionController::class, 'balance']);
+    Route::get('transactions-balance', [TransactionController::class, 'getBalance']);
+    Route::get('transactions-incomes', [TransactionController::class, 'getIncomes']);
 
     Route::post('transactions', [TransactionController::class, 'store']);
     Route::get('transactions/{id?}', [TransactionController::class, 'show']);

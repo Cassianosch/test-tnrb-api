@@ -33,49 +33,6 @@ class TransactionController extends Controller
         return response()->json($transactions);
     }
 
-    public function balance(Request $request)
-    {
-        $transactions = Transaction::query()
-            ->where('user_id', $this->user['id']);
-
-        if(!empty($request->query('period'))) {
-            $date_exploded = explode('-', $request->query('period'));
-            $transactions = $transactions->whereYear('date', $date_exploded[0]);
-            $transactions = $transactions->whereMonth('date', $date_exploded[1]);
-        }
-
-        if(!empty($request->query('type'))) {
-            if($request->query('type') == 'in') $transactions = $transactions->where('type', 'in');
-            if($request->query('type') == 'out') $transactions = $transactions->where('type', 'out');
-        }
-
-        $result = $transactions->get();
-
-        $value_positive = 0;
-        $value_negative = 0;
-        $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
-                                    ->where('type', 'in')
-                                    ->where('status', 'accepted')
-                                    ->sum('amount');
-
-        $transactions_out = Transaction::where('user_id', $this->user['id'])
-                                    ->where('type', 'out')
-                                    ->sum('amount');
-
-        $current_balance = 0;
-
-        foreach ($result as $key => $value) {
-            if($value['type'] == 'in' && $value['status'] == 'accepted') $value_positive += $value['amount'];
-            if($value['type'] == 'out') $value_negative -= $value['amount'];
-        }
-        return response()->json([
-            'balance' => ($transactions_in_accepted + $transactions_out),
-            'positive' => $value_positive,
-            'negative' => $value_negative,
-            'transactions' => $result
-        ]);
-    }
-
     public function store(Request $request)
     {
         if ($this->user['admin'] == 1) return response()->json(['success' => false, "message" => 'bypass'], 500);
@@ -203,6 +160,84 @@ class TransactionController extends Controller
         $response->header("Content-Type", $type);
 
         return $response;
+    }
+
+    public function getBalance(Request $request)
+    {
+        if ($this->user['admin'] == 1) return response()->json(['success' => false, "message" => 'no_need_access'], 500);
+
+        $transactions = Transaction::query()
+            ->where('user_id', $this->user['id']);
+
+        if(!empty($request->query('period'))) {
+            $date_exploded = explode('-', $request->query('period'));
+            $transactions = $transactions->whereYear('date', $date_exploded[0]);
+            $transactions = $transactions->whereMonth('date', $date_exploded[1]);
+        }
+
+        if(!empty($request->query('type'))) {
+            if($request->query('type') == 'in') $transactions = $transactions->where('type', 'in');
+            if($request->query('type') == 'out') $transactions = $transactions->where('type', 'out');
+        }
+
+        $result = $transactions->get();
+
+        $value_positive = 0;
+        $value_negative = 0;
+        $current_balance = 0;
+        $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
+                                    ->where('type', 'in')
+                                    ->where('status', 'accepted')
+                                    ->sum('amount');
+
+        $transactions_out = Transaction::where('user_id', $this->user['id'])
+                                    ->where('type', 'out')
+                                    ->sum('amount');
+
+
+        foreach ($result as $key => $value) {
+            if($value['type'] == 'in' && $value['status'] == 'accepted') $value_positive += $value['amount'];
+            if($value['type'] == 'out') $value_negative -= $value['amount'];
+        }
+        return response()->json([
+            'balance' => ($transactions_in_accepted + $transactions_out),
+            'positive' => $value_positive,
+            'negative' => $value_negative,
+            'transactions' => $result
+        ]);
+    }
+
+    public function getIncomes(Request $request)
+    {
+        if ($this->user['admin'] == 1) return response()->json(['success' => false, "message" => 'no_need_access'], 500);
+
+        $transactions = Transaction::query()
+            ->where('user_id', $this->user['id']);
+
+        if(!empty($request->query('period'))) {
+            $date_exploded = explode('-', $request->query('period'));
+            $transactions = $transactions->whereYear('date', $date_exploded[0]);
+            $transactions = $transactions->whereMonth('date', $date_exploded[1]);
+        }
+
+        $transactions = $transactions->where('type', 'in');
+
+        $result = $transactions->get();
+
+        $elements['pending'] = [];
+        $elements['accepted'] = [];
+        $elements['rejected'] = [];
+
+        foreach ($result as $key => $value) {
+            if($value['status'] == 'pending')  $elements['pending'][] = $value;
+            if($value['status'] == 'accepted') $elements['accepted'][] = $value;
+            if($value['status'] == 'rejected') $elements['pending'][] = $value;
+        }
+        return response()->json([
+            'pending' => $elements['pending'],
+            'accepted' => $elements['accepted'],
+            'rejected' => $elements['rejected'],
+        ]);
     }
 
     private function storeImage($request)

@@ -32,6 +32,7 @@ class TransactionController extends Controller
         }
         return response()->json($transactions);
     }
+
     public function balance(Request $request)
     {
         $transactions = Transaction::query()
@@ -39,27 +40,36 @@ class TransactionController extends Controller
 
         if(!empty($request->query('period'))) {
             $date_exploded = explode('-', $request->query('period'));
-            $transactions = $transactions->whereMonth('date', $date_exploded[0]);
-            $transactions = $transactions->whereYear('date', $date_exploded[1]);
+            $transactions = $transactions->whereYear('date', $date_exploded[0]);
+            $transactions = $transactions->whereMonth('date', $date_exploded[1]);
         }
 
         if(!empty($request->query('type'))) {
-            if($request->query('type') == 'positive') $transactions = $transactions->where('type', 'in');
-            if($request->query('type') == 'negative') $transactions = $transactions->where('type', 'out');
+            if($request->query('type') == 'in') $transactions = $transactions->where('type', 'in');
+            if($request->query('type') == 'out') $transactions = $transactions->where('type', 'out');
         }
 
         $result = $transactions->get();
 
         $value_positive = 0;
         $value_negative = 0;
-        $balance = 0;
+        $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
+                                    ->where('type', 'in')
+                                    ->where('status', 'accepted')
+                                    ->sum('amount');
+
+        $transactions_out = Transaction::where('user_id', $this->user['id'])
+                                    ->where('type', 'out')
+                                    ->sum('amount');
+
+        $current_balance = 0;
 
         foreach ($result as $key => $value) {
             if($value['type'] == 'in' && $value['status'] == 'accepted') $value_positive += $value['amount'];
             if($value['type'] == 'out') $value_negative -= $value['amount'];
         }
         return response()->json([
-            'balance' => ($value_positive + $value_negative),
+            'balance' => ($transactions_in_accepted + $transactions_out),
             'positive' => $value_positive,
             'negative' => $value_negative,
             'transactions' => $result
@@ -68,13 +78,22 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
-        if ($this->user['admin'] == 1) return response()->json(['success' => false, "message" => 'bypass']);
+        if ($this->user['admin'] == 1) return response()->json(['success' => false, "message" => 'bypass'], 500);
 
         $rules = $this->validationCustomer();
 
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) return response()->json($validator->messages());
+
+        if($request->type == 'out') {
+            $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
+            ->where('type', 'in')
+            ->where('status', 'accepted')
+            ->sum('amount');
+            $user_new_balance = $transactions_in_accepted - $request->amount;
+            if($user_new_balance < 0) return response()->json(['success' => false, "message" => 'dont have funds'], 500);
+        }
 
         if (!empty($request['image'])) $image_saved = $this->storeImage($request);
 
@@ -96,9 +115,10 @@ class TransactionController extends Controller
                 ->where('id', $id)
                 ->limit(1)
                 ->get();
-            if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'bypass']);
+            if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'bypass'], 500);
             return response()->json($transaction);
         }
+        return response()->json(['success' => false, "message" => 'no_id']);
     }
 
     public function update(Request $request)
@@ -112,13 +132,14 @@ class TransactionController extends Controller
                 $transaction = Transaction::where('id', $request->id)
                     ->where('user_id', $this->user['id'])
                     ->get();
-                if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'bypass']);
+
+                if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'bypass'], 500);
 
                 $rules = $this->validationCustomer();
             }
 
             $validator = Validator::make($request->all(), $rules);
-            if ($validator->fails()) return response()->json($validator->messages());
+            if ($validator->fails()) return response()->json($validator->messages(), 500);
 
             $transaction_to_update = Transaction::findOrFail($request->id);
 
@@ -128,7 +149,7 @@ class TransactionController extends Controller
                 ]);
                 $transaction_to_update->save();
             } else {
-
+                $image_saved = false;
                 if (!empty($request['image'])) $image_saved = $this->storeImage($request);
 
                 $transaction_to_update->fill([
@@ -137,13 +158,14 @@ class TransactionController extends Controller
                     'date' => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
                     'description' => $request->description,
                     'type' => $request->type,
-                    'image' => $image_saved
+                    'image' => $image_saved ? $image_saved : null
                 ]);
-                $transaction_to_update->save();
+                if ($transaction_to_update->save()) {
+                    return response()->json($transaction_to_update);
+                }
             }
-            return response()->json($transaction_to_update);
         }
-        return response()->json(['success' => false, 'message' => 'error']);
+        return response()->json(['success' => false, 'message' => 'error'], 500);
     }
 
     public function delete($id = false)
@@ -153,7 +175,7 @@ class TransactionController extends Controller
                 $transaction = Transaction::where('id', $id)
                     ->where('user_id', $this->user['id'])
                     ->get();
-                if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
+                if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction'], 500);
             }
 
             $transaction_to_delete = Transaction::find($id);
@@ -163,7 +185,7 @@ class TransactionController extends Controller
     }
 
     public function image($id, $token) {
-        if(empty($id)) return response()->json(['success' => false, "message" => 'bypass']);
+        if(empty($id)) return response()->json(['success' => false, "message" => 'bypass'], 500);
 
         $transactions = Transaction::query()
             ->where('id', $id);
@@ -171,7 +193,7 @@ class TransactionController extends Controller
         if ($this->user['admin'] == 0) $transactions = $transactions->where('user_id', $this->user['id']);
 
         $transaction = $transactions->get();
-        if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
+        if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction'], 500);
 
         $img = $transaction[0]['image'];
         $file = Storage::get($img);
@@ -195,7 +217,7 @@ class TransactionController extends Controller
             'date' => ['required'],
             'description' => ['string'],
             'type' => ['required', 'in:in,out'],
-            'image' => ['mimes:jpg,png', 'max:4096'],
+            'image' => ['sometimes','mimes:jpg,png', 'max:4096'],
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Response;
 
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
@@ -167,12 +168,20 @@ class TransactionController extends Controller
         $transactions = Transaction::query()
             ->where('id', $id);
 
-        if ($this->user['admin'] == 0) $transactions->where('user_id', $this->user['id']);
+        if ($this->user['admin'] == 0) $transactions = $transactions->where('user_id', $this->user['id']);
 
         $transaction = $transactions->get();
+        dd($this->user['id']);
         if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
 
-        return Storage::download($transaction[0]['image']);
+        $img = $transaction[0]['image'];
+        $file = Storage::get($img);
+        $type = Storage::mimeType($img);
+
+        $response = Response::make($file, 200);
+        $response->header("Content-Type", $type);
+
+        return $response;
     }
 
     private function storeImage($request)

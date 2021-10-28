@@ -18,6 +18,7 @@ class TransactionsTable extends Migration
             $table->double('amount', 8, 2);
             $table->dateTime('date');
             $table->longText('description')->nullable();
+            $table->longText('image')->nullable();
             $table->enum('type', ['in', 'out']);
             $table->enum('status', ['pending', 'accepted', 'rejected']);
             $table->foreignId('user_id')

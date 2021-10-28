@@ -8,10 +8,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Transactions extends Authenticatable
+class Transaction extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
     public $timestamps = true;
+    protected $table = 'transactions';
     /**
      * The attributes that are mass assignable.
      *
@@ -44,5 +45,9 @@ class Transactions extends Authenticatable
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    public function image()
+    {
+        return $this->belongsTo(Image::class);
     }
 }

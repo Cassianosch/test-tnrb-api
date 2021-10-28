@@ -67,23 +67,15 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
-        if ($this->user['admin'] == 1) return response()->json($validator->messages());
+        if ($this->user['admin'] == 1) return response()->json(['success' => false, "message" => 'bypass']);
 
-        $rules = [
-            'amount' => ['required'],
-            'date' => ['required'],
-            'description' => ['string'],
-            'type' => ['required', 'in:in,out'],
-            'image' => ['mimes:jpg,png', 'max:4096'],
-        ];
+        $rules = $this->validationCustomer();
 
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) return response()->json($validator->messages());
 
-        if (!empty($request['image'])) {
-            $image_saved = $this->storeImage($request);
-        }
+        if (!empty($request['image'])) $image_saved = $this->storeImage($request);
 
         $newTransaction = Transaction::create([
             'user_id' => $this->user['id'],
@@ -103,14 +95,6 @@ class TransactionController extends Controller
                 ->where('id', $id)
                 ->limit(1)
                 ->get();
-
-
-                if(!empty($transaction[0]['image'])) $url = Storage::path($transaction[0]['image']);
-
-                dd($url);
-                // return Storage::download($transaction[0]['image']);
-                // dd($transaction[0]['image']);
-
             if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'bypass']);
             return response()->json($transaction);
         }
@@ -129,13 +113,7 @@ class TransactionController extends Controller
                     ->get();
                 if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'bypass']);
 
-                $rules = [
-                    'amount' => ['required'],
-                    'date' => ['required'],
-                    'description' => ['string'],
-                    'type' => ['required', 'in:in,out'],
-                    'image_id' => ['integer'],
-                ];
+                $rules = $this->validationCustomer();
             }
 
             $validator = Validator::make($request->all(), $rules);
@@ -149,13 +127,16 @@ class TransactionController extends Controller
                 ]);
                 $transaction_to_update->save();
             } else {
+
+                if (!empty($request['image'])) $image_saved = $this->storeImage($request);
+
                 $transaction_to_update->fill([
                     'user_id' => $this->user['id'],
                     'amount' => $request->amount,
                     'date' => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
                     'description' => $request->description,
                     'type' => $request->type,
-                    'image_id' => $request->image_id
+                    'image' => $image_saved
                 ]);
                 $transaction_to_update->save();
             }
@@ -197,5 +178,16 @@ class TransactionController extends Controller
     private function storeImage($request)
     {
         return $request->image->store('public/images/transactions');
+    }
+
+    private function validationCustomer()
+    {
+        return [
+            'amount' => ['required'],
+            'date' => ['required'],
+            'description' => ['string'],
+            'type' => ['required', 'in:in,out'],
+            'image' => ['mimes:jpg,png', 'max:4096'],
+        ];
     }
 }

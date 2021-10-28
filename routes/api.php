@@ -23,6 +23,7 @@ Route::post('register', [UserController::class, 'store']);
 Route::group(['middleware' => ['jwt.verify']], function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
+    Route::patch('update-me', [UserController::class, 'update']);
 
     Route::get('transactions', [TransactionController::class, 'index']);
     Route::get('transactions-balance', [TransactionController::class, 'balance']);

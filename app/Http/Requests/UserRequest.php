@@ -29,7 +29,7 @@ class UserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|string|max:255|email|unique:users',
-            'password' => ['required', Rules\Password::defaults()],
+            'password' => ['sometimes|required', Rules\Password::defaults()],
         ];
     }
     public function failedValidation(Validator $validator)

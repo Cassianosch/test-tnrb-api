@@ -162,7 +162,7 @@ class TransactionController extends Controller
         }
     }
 
-    public function image($id) {
+    public function image($id, $token) {
         if(empty($id)) return response()->json(['success' => false, "message" => 'bypass']);
 
         $transactions = Transaction::query()
@@ -171,7 +171,6 @@ class TransactionController extends Controller
         if ($this->user['admin'] == 0) $transactions = $transactions->where('user_id', $this->user['id']);
 
         $transaction = $transactions->get();
-        dd($this->user['id']);
         if ($transaction->isEmpty()) return response()->json(['success' => false, "message" => 'no_transaction']);
 
         $img = $transaction[0]['image'];

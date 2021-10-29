@@ -202,7 +202,7 @@ class TransactionController extends Controller
             if($value['type'] == 'out') $value_negative -= $value['amount'];
         }
         return response()->json([
-            'balance' => ($transactions_in_accepted + $transactions_out),
+            'balance' => ($transactions_in_accepted - $transactions_out),
             'positive' => $value_positive,
             'negative' => $value_negative,
             'transactions' => $result

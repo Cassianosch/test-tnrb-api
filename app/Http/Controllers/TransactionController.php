@@ -62,7 +62,7 @@ class TransactionController extends Controller
         $newTransaction   = Transaction::create([
             'user_id'     => $this->user['id'],
             'amount'      => $request->amount,
-            'date'        => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
+            'date'        => Carbon::parse($request->date)->format('Y-m-d H:i:s'),
             'description' => $request->description,
             'type'        => $request->type,
             'image'       => !empty($image_saved) ? $image_saved : null
@@ -134,7 +134,7 @@ class TransactionController extends Controller
                     $transaction_to_update->fill([
                         'user_id'     => $this->user['id'],
                         'amount'      => $request->amount,
-                        'date'        => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
+                        'date'        => Carbon::parse($request->date)->format('Y-m-d H:i:s'),
                         'description' => $request->description,
                         'type'        => $request->type,
                         'image'       => $image_saved
@@ -143,7 +143,7 @@ class TransactionController extends Controller
                     $transaction_to_update->fill([
                         'user_id'     => $this->user['id'],
                         'amount'      => $request->amount,
-                        'date'        => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
+                        'date'        => Carbon::parse($request->date)->format('Y-m-d H:i:s'),
                         'description' => $request->description,
                         'type'        => $request->type,
                     ]);

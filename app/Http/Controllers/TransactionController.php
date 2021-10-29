@@ -80,6 +80,7 @@ class TransactionController extends Controller
 
     public function update(Request $request)
     {
+
         if ($request->id) {
             if ($this->user['admin'] == 1) {
                 $rules = [
@@ -121,8 +122,9 @@ class TransactionController extends Controller
                     return response()->json($transaction_to_update);
                 }
             }
+        } else {
+            return response()->json(['success' => false, 'message' => 'error'], 500);
         }
-        return response()->json(['success' => false, 'message' => 'error'], 500);
     }
 
     public function delete($id = false)

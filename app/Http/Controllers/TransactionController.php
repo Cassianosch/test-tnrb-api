@@ -219,6 +219,12 @@ class TransactionController extends Controller
         $value_positive  = 0;
         $value_negative  = 0;
         $current_balance = 0;
+
+        foreach ($result as $key => $value) {
+            if($value['type'] == 'in' && $value['status'] == 'accepted') $value_positive += $value['amount'];
+            if($value['type'] == 'out')                                  $value_negative -= $value['amount'];
+        }
+
         $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
                                                 ->where('type', 'in')
                                                 ->where('status', 'accepted')
@@ -228,11 +234,6 @@ class TransactionController extends Controller
                                         ->where('type', 'out')
                                         ->sum('amount');
 
-
-        foreach ($result as $key => $value) {
-            if($value['type'] == 'in' && $value['status'] == 'accepted') $value_positive += $value['amount'];
-            if($value['type'] == 'out')                                  $value_negative -= $value['amount'];
-        }
         return response()->json([
             'balance'      => ($transactions_in_accepted - $transactions_out),
             'positive'     => $value_positive,

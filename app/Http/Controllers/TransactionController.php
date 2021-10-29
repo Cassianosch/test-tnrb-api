@@ -129,7 +129,7 @@ class TransactionController extends Controller
                     if($user_new_balance < 0)
                         return response()->json(['success' => false, "message" => ['You don`t have enough funds']], 400);
                 } else {
-                    if($request->type == 'in' && $request->type != 'pending')
+                    if($request->type == 'in' && $request->status != 'pending')
                         return response()->json(['success' => false, "message" => ['You can`t change after being accepted or rejected']], 400);
                 }
 

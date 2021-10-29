@@ -233,7 +233,7 @@ class TransactionController extends Controller
         foreach ($result as $key => $value) {
             if($value['status'] == 'pending')  $elements['pending'][] = $value;
             if($value['status'] == 'accepted') $elements['accepted'][] = $value;
-            if($value['status'] == 'rejected') $elements['pending'][] = $value;
+            if($value['status'] == 'rejected') $elements['rejected'][] = $value;
         }
         return response()->json([
             'pending' => $elements['pending'],

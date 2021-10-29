@@ -47,12 +47,7 @@ class TransactionController extends Controller
             return response()->json($validator->messages(), 400);
 
         if($request->type == 'out') {
-            $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
-                                                    ->where('type', 'in')
-                                                    ->where('status', 'accepted')
-                                                    ->sum('amount');
-
-            $user_new_balance = $transactions_in_accepted - $request->amount;
+            $user_new_balance = $this->getCurrentBalance() - $request->amount;
             if($user_new_balance < 0)
                 return response()->json(['success' => false, "message" => ['You don`t have enough funds']], 400);
         }

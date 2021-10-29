@@ -15,7 +15,7 @@ class TransactionsTable extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->double('amount', 8, 2);
+            $table->double('amount', 25, 2);
             $table->dateTime('date');
             $table->longText('description')->nullable();
             $table->longText('image')->nullable();

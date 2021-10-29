@@ -134,14 +134,24 @@ class TransactionController extends Controller
                         return response()->json(['success' => false, "message" => ['You don`t have enough funds']], 500);
                 }
 
-                $transaction_to_update->fill([
-                    'user_id'     => $this->user['id'],
-                    'amount'      => $request->amount,
-                    'date'        => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
-                    'description' => $request->description,
-                    'type'        => $request->type,
-                    'image'       => $image_saved ? $image_saved : null
-                ]);
+                if($request->filled('image')) {
+                    $transaction_to_update->fill([
+                        'user_id'     => $this->user['id'],
+                        'amount'      => $request->amount,
+                        'date'        => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
+                        'description' => $request->description,
+                        'type'        => $request->type,
+                        'image'       => $image_saved
+                    ]);
+                } else {
+                    $transaction_to_update->fill([
+                        'user_id'     => $this->user['id'],
+                        'amount'      => $request->amount,
+                        'date'        => Carbon::parse($request->date)->format('Y-m-d H:m:s'),
+                        'description' => $request->description,
+                        'type'        => $request->type,
+                    ]);
+                }
 
                 if ($transaction_to_update->save()) {
                     return response()->json($transaction_to_update);

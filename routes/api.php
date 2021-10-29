@@ -19,7 +19,7 @@ use App\Http\Controllers\ImageController;
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [UserController::class, 'store']);
-Route::get('transactions-image/{id}/{token}', [TransactionController::class, 'image']);
+Route::get('transactions-image/{id}/{token}', [TransactionController::class, 'getImage']);
 
 Route::group(['middleware' => ['jwt.verify']], function () {
     Route::post('logout', [AuthController::class, 'logout']);

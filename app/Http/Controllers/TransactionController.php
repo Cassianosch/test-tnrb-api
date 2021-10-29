@@ -86,7 +86,6 @@ class TransactionController extends Controller
 
     public function update(Request $request)
     {
-
         if ($request->id) {
             if ($this->user['admin'] == 1) {
                 $rules = [
@@ -123,12 +122,8 @@ class TransactionController extends Controller
                 if (!empty($request['image'])) $image_saved = $this->storeImage($request);
 
                 if($request->type == 'out') {
-                    $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
-                                                            ->where('type', 'in')
-                                                            ->where('status', 'accepted')
-                                                            ->sum('amount');
 
-                    $user_new_balance = $transactions_in_accepted - $request->amount;
+                    $user_new_balance = ($this->getCurrentBalance() + $transaction_to_update['amount']) - $request->amount;
 
                     if($user_new_balance < 0)
                         return response()->json(['success' => false, "message" => ['You don`t have enough funds']], 500);
@@ -180,7 +175,8 @@ class TransactionController extends Controller
         }
     }
 
-    public function getImage($id, $token) {
+    public function getImage($id, $token)
+    {
         if(empty($id))
             return response()->json(['success' => false, "message" => 'bypass'], 500);
 
@@ -235,17 +231,8 @@ class TransactionController extends Controller
             if($value['type'] == 'out')                                  $value_negative -= $value['amount'];
         }
 
-        $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
-                                                ->where('type', 'in')
-                                                ->where('status', 'accepted')
-                                                ->sum('amount');
-
-        $transactions_out = Transaction::where('user_id', $this->user['id'])
-                                        ->where('type', 'out')
-                                        ->sum('amount');
-
         return response()->json([
-            'balance'      => ($transactions_in_accepted - $transactions_out),
+            'balance'      => $this->getCurrentBalance(),
             'positive'     => $value_positive,
             'negative'     => $value_negative,
             'transactions' => $result
@@ -300,5 +287,19 @@ class TransactionController extends Controller
             'type'        => ['required', 'in:in,out'],
             'image'       => ['sometimes','mimes:jpg,png', 'max:4096'],
         ];
+    }
+
+    private function getCurrentBalance()
+    {
+        $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
+        ->where('type', 'in')
+        ->where('status', 'accepted')
+        ->sum('amount');
+
+        $transactions_out = Transaction::where('user_id', $this->user['id'])
+                                        ->where('type', 'out')
+                                        ->sum('amount');
+
+        return $transactions_in_accepted - $transactions_out;
     }
 }

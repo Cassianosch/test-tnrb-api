@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Response;
+use Illuminate\Http\Response;
 
 use App\Models\Transaction;
 
@@ -128,6 +128,9 @@ class TransactionController extends Controller
 
                     if($user_new_balance < 0)
                         return response()->json(['success' => false, "message" => ['You don`t have enough funds']], 400);
+                } else {
+                    if($request->type == 'in' && $request->type != 'pending')
+                        return response()->json(['success' => false, "message" => ['You can`t change after being accepted or rejected']], 400);
                 }
 
                 if($request->filled('image')) {

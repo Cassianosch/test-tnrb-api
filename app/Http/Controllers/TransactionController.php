@@ -41,7 +41,7 @@ class TransactionController extends Controller
 
         $validator = Validator::make($request->all(), $rules);
 
-        if ($validator->fails()) return response()->json($validator->messages());
+        if ($validator->fails()) return response()->json($validator->messages(), 500);
 
         if($request->type == 'out') {
             $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])

@@ -49,7 +49,7 @@ class TransactionController extends Controller
             ->where('status', 'accepted')
             ->sum('amount');
             $user_new_balance = $transactions_in_accepted - $request->amount;
-            if($user_new_balance < 0) return response()->json(['success' => false, "message" => 'dont have funds'], 500);
+            if($user_new_balance < 0) return response()->json(['success' => false, "message" => ['You don`t have enough funds']], 500);
         }
 
         if (!empty($request['image'])) $image_saved = $this->storeImage($request);
@@ -110,6 +110,15 @@ class TransactionController extends Controller
                 $image_saved = false;
                 if (!empty($request['image'])) $image_saved = $this->storeImage($request);
 
+                if($request->type == 'out') {
+                    $transactions_in_accepted = Transaction::where('user_id', $this->user['id'])
+                    ->where('type', 'in')
+                    ->where('status', 'accepted')
+                    ->sum('amount');
+                    $user_new_balance = $transactions_in_accepted - $request->amount;
+                    if($user_new_balance < 0) return response()->json(['success' => false, "message" => ['You don`t have enough funds']], 500);
+                }
+
                 $transaction_to_update->fill([
                     'user_id' => $this->user['id'],
                     'amount' => $request->amount,
@@ -118,12 +127,13 @@ class TransactionController extends Controller
                     'type' => $request->type,
                     'image' => $image_saved ? $image_saved : null
                 ]);
+
                 if ($transaction_to_update->save()) {
                     return response()->json($transaction_to_update);
                 }
             }
         } else {
-            return response()->json(['success' => false, 'message' => 'error'], 500);
+            return response()->json(['success' => false, 'message' => ['error']], 500);
         }
     }
 
